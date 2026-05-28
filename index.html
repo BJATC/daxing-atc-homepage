@@ -400,6 +400,7 @@ body.locked {
     x5-video-player-type="h5_page"
     x5-video-player-fullscreen="false"
     preload="auto"
+    muted
     poster=""
   >
     <source src="hero.mp4" type="video/mp4">
@@ -425,12 +426,12 @@ body.locked {
 
   <!-- Sound toggle -->
   <button class="hero__sound" id="soundBtn" aria-label="切换声音">
-    <svg class="hero__sound-on" id="soundOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+    <svg class="hero__sound-on" id="soundOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" style="display:none">
       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
       <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
       <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
     </svg>
-    <svg class="hero__sound-off" id="soundOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" style="display:none">
+    <svg class="hero__sound-off" id="soundOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" style="display:block">
       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
       <line x1="23" y1="9" x2="17" y2="15"></line>
       <line x1="17" y1="9" x2="23" y2="15"></line>
@@ -477,10 +478,10 @@ body.locked {
   // Lock scroll until user clicks play
   document.body.classList.add('locked');
 
-  // Click overlay to play with sound
+  // Click overlay to play (iOS WeChat requires muted first, then unmute)
   overlay.addEventListener('click', function() {
-    video.muted = false;
-    video.volume = 1;
+    // Must start muted for iOS WeChat to allow playback
+    video.muted = true;
     video.play().then(function() {
       hideOverlay();
       // Unlock scroll
@@ -489,8 +490,18 @@ body.locked {
       if (!prefersReducedMotion) {
         setTimeout(function() { soundBtn.classList.add('visible'); }, 500);
       }
-    }).catch(function() {
-      // Play failed, keep overlay visible
+      // Try to unmute after playback starts (may fail silently on iOS)
+      setTimeout(function() {
+        video.muted = false;
+        video.volume = 1;
+        // Update sound button state
+        soundOn.style.display = 'block';
+        soundOff.style.display = 'none';
+      }, 100);
+    }).catch(function(err) {
+      console.error('Video play failed:', err);
+      // Show a message to user
+      alert('视频播放失败，请尝试刷新页面或使用其他浏览器打开');
     });
   });
 
