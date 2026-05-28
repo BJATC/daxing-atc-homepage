@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>大兴空管管制运行部</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: "Microsoft YaHei", "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f5f3ef;
+  color: #1a1a18;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Design Tokens ===== */
+:root {
+  --c-bg:        #f5f3ef;
+  --c-surface:   #eae7e1;
+  --c-text:      #1a1a18;
+  --c-text-dim:  #6b6860;
+  --c-accent:    #8b4513;
+  --c-hero-bg:   #1a1a18;
+
+  --fs-hero:     clamp(3rem, 8vw, 7rem);
+  --fs-h2:       clamp(1.8rem, 4vw, 3.2rem);
+  --fs-label:    0.75rem;
+  --fs-body:     1.05rem;
+  --fs-small:    0.875rem;
+
+  --sp-page:     clamp(1.5rem, 5vw, 6rem);
+  --sp-section:  clamp(5rem, 12vh, 10rem);
+
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-reveal:  0.8s;
+}
+
+/* ===== Typography ===== */
+.font-serif {
+  font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", "STSong", Georgia, "Times New Roman", serif;
+}
+.font-sans {
+  font-family: "Microsoft YaHei", "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ===== Navigation ===== */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem var(--sp-page);
+  transition: background 0.4s ease, backdrop-filter 0.4s ease;
+}
+.nav--scrolled {
+  background: rgba(245, 243, 239, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.nav__name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.1em;
+  transition: color 0.4s ease;
+}
+.nav--scrolled .nav__name {
+  color: var(--c-text);
+}
+.nav__links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+.nav__links a {
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  letter-spacing: 0.05em;
+  transition: color 0.3s ease;
+}
+.nav--scrolled .nav__links a {
+  color: var(--c-text-dim);
+}
+.nav__links a:hover {
+  color: #fff;
+}
+.nav--scrolled .nav__links a:hover {
+  color: var(--c-text);
+}
+
+/* ===== Hero ===== */
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--c-hero-bg);
+}
+.hero__video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  object-position: center top;
+  z-index: 1;
+}
+.hero__content {
+  position: absolute;
+  bottom: 12vh;
+  left: var(--sp-page);
+  z-index: 3;
+  color: #fff;
+  max-width: 600px;
+}
+.hero__headline {
+  font-size: var(--fs-hero);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.35);
+}
+.hero__subtitle {
+  margin-top: 1.5rem;
+  font-size: var(--fs-body);
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.05em;
+}
+.hero__scroll {
+  position: absolute;
+  bottom: 3vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  text-align: center;
+}
+.hero__scroll.visible {
+  opacity: 1;
+}
+.hero__scroll-arrow {
+  display: block;
+  margin: 0.5rem auto 0;
+  width: 1px;
+  height: 32px;
+  background: rgba(255,255,255,0.4);
+  position: relative;
+}
+.hero__scroll-arrow::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -4px;
+  width: 9px;
+  height: 9px;
+  border-right: 1px solid rgba(255,255,255,0.4);
+  border-bottom: 1px solid rgba(255,255,255,0.4);
+  transform: rotate(45deg);
+}
+
+/* Click-to-play overlay for WeChat / iOS */
+.hero__play-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 24, 0.6);
+  cursor: pointer;
+  transition: opacity 0.5s ease;
+}
+.hero__play-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.hero__play-btn {
+  width: 72px;
+  height: 72px;
+  border: 2px solid rgba(255,255,255,0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+.hero__play-btn:hover {
+  transform: scale(1.08);
+  border-color: #fff;
+}
+.hero__play-icon {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 12px 0 12px 22px;
+  border-color: transparent transparent transparent rgba(255,255,255,0.9);
+  margin-left: 4px;
+}
+.hero__play-text {
+  margin-top: 1.25rem;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+}
+
+/* Sound toggle */
+.hero__sound {
+  position: absolute;
+  bottom: 3vh;
+  right: var(--sp-page);
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255,255,255,0.8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+.hero__sound.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.hero__sound:hover {
+  border-color: rgba(255,255,255,0.6);
+  background: rgba(0,0,0,0.5);
+}
+
+/* ===== Duty Card Entry ===== */
+.duty {
+  padding: var(--sp-section) var(--sp-page);
+  background: var(--c-text);
+  color: #fff;
+}
+.duty__inner {
+  max-width: 1200px;
+}
+.duty__label {
+  font-size: var(--fs-label);
+  letter-spacing: 0.2em;
+  color: var(--c-accent);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.duty__heading {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  margin: 1rem 0 1rem;
+  line-height: 1.2;
+}
+.duty__text {
+  color: rgba(255,255,255,0.7);
+  font-size: var(--fs-body);
+  margin-bottom: 2rem;
+  max-width: 480px;
+}
+.duty__cta {
+  display: inline-block;
+  padding: 1rem 2.5rem;
+  background: #fff;
+  color: var(--c-text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: var(--fs-body);
+  letter-spacing: 0.05em;
+  transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+.duty__cta:hover {
+  background: var(--c-accent);
+  color: #fff;
+  transform: translateY(-2px);
+}
+.duty__cta:active {
+  transform: translateY(0);
+}
+.duty__cta.pulse {
+  animation: subtle-pulse 2s ease-in-out 3;
+}
+@keyframes subtle-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  50% { box-shadow: 0 0 0 8px rgba(255,255,255,0.12); }
+}
+
+/* ===== Footer ===== */
+.footer {
+  padding: 3rem var(--sp-page);
+  border-top: 1px solid var(--c-surface);
+  font-size: var(--fs-small);
+  color: var(--c-text-dim);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ===== Scroll Reveal ===== */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity var(--dur-reveal) var(--ease-out),
+              transform var(--dur-reveal) var(--ease-out);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  :root {
+    --sp-page: 1.25rem;
+    --sp-section: 4rem;
+  }
+  .hero__headline {
+    font-size: clamp(2.2rem, 10vw, 3.5rem);
+  }
+  .hero__content {
+    bottom: 8vh;
+  }
+  .nav__links {
+    gap: 1rem;
+  }
+  .nav__links a {
+    font-size: 0.75rem;
+  }
+  .duty__text {
+    max-width: 100%;
+  }
+  .footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav" id="nav">
+  <div class="nav__name font-sans">大兴空管管制运行部</div>
+  <ul class="nav__links">
+    <li><a href="#duty">执勤系统</a></li>
+    <li><a href="#footer">联系方式</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <video
+    class="hero__video"
+    id="heroVideo"
+    playsinline
+    webkit-playsinline
+    x5-video-player-type="h5_page"
+    x5-video-player-fullscreen="false"
+    preload="auto"
+    poster=""
+  >
+    <source src="hero.mp4" type="video/mp4">
+  </video>
+
+  <div class="hero__content">
+    <h1 class="hero__headline font-serif">大兴空管<br>管制运行部</h1>
+    <p class="hero__subtitle">守护每一架航班的安全起降</p>
+  </div>
+
+  <div class="hero__scroll" id="heroScroll">
+    <span>SCROLL</span>
+    <span class="hero__scroll-arrow"></span>
+  </div>
+
+  <!-- Click-to-play overlay for WeChat / iOS -->
+  <div class="hero__play-overlay" id="playOverlay">
+    <div class="hero__play-btn">
+      <div class="hero__play-icon"></div>
+    </div>
+    <p class="hero__play-text">点击播放</p>
+  </div>
+
+  <!-- Sound toggle -->
+  <button class="hero__sound" id="soundBtn" aria-label="切换声音">
+    <svg class="hero__sound-on" id="soundOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    </svg>
+    <svg class="hero__sound-off" id="soundOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" style="display:none">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <line x1="23" y1="9" x2="17" y2="15"></line>
+      <line x1="17" y1="9" x2="23" y2="15"></line>
+    </svg>
+  </button>
+</section>
+
+<!-- Duty Card Entry -->
+<section class="duty" id="duty">
+  <div class="duty__inner reveal">
+    <span class="duty__label font-sans">DUTY CARD</span>
+    <h2 class="duty__heading font-serif">执勤卡片系统</h2>
+    <p class="duty__text">查看今日排班、工时统计、席位安排与搭配合规信息。</p>
+    <a href="../执勤卡片0524.html" class="duty__cta" id="dutyCta">进入系统</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer" id="footer">
+  <span>大兴空管管制运行部</span>
+  <span>&copy; 2026</span>
+</footer>
+
+<script>
+(function() {
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ===== Video & Play Overlay =====
+  var video = document.getElementById('heroVideo');
+  var overlay = document.getElementById('playOverlay');
+  var scrollHint = document.getElementById('heroScroll');
+  var dutyCta = document.getElementById('dutyCta');
+  var soundBtn = document.getElementById('soundBtn');
+  var soundOn = document.getElementById('soundOn');
+  var soundOff = document.getElementById('soundOff');
+
+  function hideOverlay() {
+    overlay.classList.add('hidden');
+  }
+
+  // Always show overlay initially (unmuted autoplay is blocked everywhere)
+  overlay.classList.remove('hidden');
+
+  // Click overlay to play with sound
+  overlay.addEventListener('click', function() {
+    video.muted = false;
+    video.volume = 1;
+    video.play().then(function() {
+      hideOverlay();
+      // Show sound toggle after video starts
+      if (!prefersReducedMotion) {
+        setTimeout(function() { soundBtn.classList.add('visible'); }, 500);
+      }
+    }).catch(function() {
+      // Play failed, keep overlay visible
+    });
+  });
+
+  // Sound toggle
+  soundBtn.addEventListener('click', function() {
+    video.muted = !video.muted;
+    if (video.muted) {
+      soundOn.style.display = 'none';
+      soundOff.style.display = 'block';
+    } else {
+      soundOn.style.display = 'block';
+      soundOff.style.display = 'none';
+    }
+  });
+
+  // Video ended: show scroll hint + pulse CTA
+  video.addEventListener('ended', function() {
+    if (!prefersReducedMotion) {
+      scrollHint.classList.add('visible');
+      // Small delay before pulsing CTA
+      setTimeout(function() {
+        dutyCta.classList.add('pulse');
+      }, 1200);
+    }
+  });
+
+  // ===== Navigation Scroll State =====
+  var nav = document.getElementById('nav');
+  var heroEl = document.getElementById('hero');
+
+  function updateNav() {
+    var scrolled = window.scrollY > heroEl.offsetHeight * 0.6;
+    if (scrolled) {
+      nav.classList.add('nav--scrolled');
+    } else {
+      nav.classList.remove('nav--scrolled');
+    }
+  }
+
+  window.addEventListener('scroll', updateNav, { passive: true });
+  updateNav();
+
+  // ===== Scroll Reveal =====
+  if (!prefersReducedMotion) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.reveal').forEach(function(el) {
+      observer.observe(el);
+    });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function(el) {
+      el.classList.add('visible');
+    });
+  }
+})();
+</script>
+</body>
+</html>
