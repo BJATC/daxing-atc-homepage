@@ -397,8 +397,10 @@ body.locked {
     id="heroVideo"
     playsinline
     webkit-playsinline
-    x5-video-player-type="h5_page"
+    x5-playsinline
+    x5-video-player-type="h5"
     x5-video-player-fullscreen="false"
+    x5-video-orientation="portrait"
     preload="auto"
     muted
     poster=""
@@ -482,26 +484,40 @@ body.locked {
   overlay.addEventListener('click', function() {
     // Must start muted for iOS WeChat to allow playback
     video.muted = true;
-    video.play().then(function() {
+
+    // Listen for playing event to know when video actually starts
+    var onPlaying = function() {
+      video.removeEventListener('playing', onPlaying);
+
       hideOverlay();
       // Unlock scroll
       document.body.classList.remove('locked');
-      // Show sound toggle after video starts
-      if (!prefersReducedMotion) {
-        setTimeout(function() { soundBtn.classList.add('visible'); }, 500);
-      }
-      // Try to unmute after playback starts (may fail silently on iOS)
-      setTimeout(function() {
+
+      // Show sound toggle after video starts (always show, not just for animated)
+      setTimeout(function() { soundBtn.classList.add('visible'); }, 500);
+
+      // Try to unmute after video is actually playing
+      try {
         video.muted = false;
         video.volume = 1;
-        // Update sound button state
-        soundOn.style.display = 'block';
-        soundOff.style.display = 'none';
-      }, 100);
-    }).catch(function(err) {
+        // Update sound button state based on actual muted state
+        if (!video.muted) {
+          soundOn.style.display = 'block';
+          soundOff.style.display = 'none';
+        }
+      } catch (e) {
+        // Unmuting failed - user can manually tap sound button
+        console.log('Unmute failed, user can tap sound button');
+      }
+    };
+
+    video.addEventListener('playing', onPlaying);
+
+    video.play().catch(function(err) {
       console.error('Video play failed:', err);
-      // Show a message to user
-      alert('视频播放失败，请尝试刷新页面或使用其他浏览器打开');
+      video.removeEventListener('playing', onPlaying);
+      // Keep overlay visible but don't block - let user try again
+      alert('视频播放失败，请点击屏幕重试');
     });
   });
 
