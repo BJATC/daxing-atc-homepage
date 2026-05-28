@@ -15,6 +15,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+body.locked {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
 
 /* ===== Design Tokens ===== */
 :root {
@@ -439,7 +444,7 @@ body {
     <span class="duty__label font-sans">DUTY CARD</span>
     <h2 class="duty__heading font-serif">执勤卡片系统</h2>
     <p class="duty__text">查看今日排班、工时统计、席位安排与搭配合规信息。</p>
-    <a href="../执勤卡片0524.html" class="duty__cta" id="dutyCta">进入系统</a>
+    <a href="执勤卡片0524.html" class="duty__cta" id="dutyCta">进入系统</a>
   </div>
 </section>
 
@@ -469,12 +474,17 @@ body {
   // Always show overlay initially (unmuted autoplay is blocked everywhere)
   overlay.classList.remove('hidden');
 
+  // Lock scroll until user clicks play
+  document.body.classList.add('locked');
+
   // Click overlay to play with sound
   overlay.addEventListener('click', function() {
     video.muted = false;
     video.volume = 1;
     video.play().then(function() {
       hideOverlay();
+      // Unlock scroll
+      document.body.classList.remove('locked');
       // Show sound toggle after video starts
       if (!prefersReducedMotion) {
         setTimeout(function() { soundBtn.classList.add('visible'); }, 500);
