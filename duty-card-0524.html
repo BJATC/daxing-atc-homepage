@@ -373,9 +373,6 @@ html,body{width:100%;overflow-x:hidden;font-family:"Microsoft YaHei","PingFang S
   </div>
   <div id="hintText">共 38 人执勤 · 输入姓名搜索</div>
   <ul id="suggestions"></ul>
-  <div style="margin-top:20px;text-align:center">
-    <button onclick="testCard()" style="padding:8px 16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#64748B;font-size:12px;cursor:pointer">直接查看金京卡片（跳过动画）</button>
-  </div>
 </div>
 
 <!-- 第一幕：终端 -->
@@ -700,7 +697,6 @@ function act2Sequence(){
 
 // ====== 第三幕：渲染精美卡片 ======
 function renderAct3(rec){
-  console.log('renderAct3 called for:',rec?rec.name:'null');
   try {
   // 时间轴
   var minH=6.5,maxH=24,range=maxH-minH;
@@ -832,42 +828,24 @@ function renderAct3(rec){
   html+='<div class="card-footer"><div class="gen-text">DUTY CARD GENERATED</div></div>';
   html+='</div>';
 
-  console.log('HTML length:',html.length);
   $('act3').innerHTML=html;
-  console.log('renderAct3 done');
   } catch(e){
-    console.error('renderAct3 error:',e);
-    $('act3').innerHTML='<div class="back-btn" onclick="goBack()">← 返回搜索</div><div class="card" style="padding:40px 20px;text-align:center"><h2 style="color:#F59E0B;margin-bottom:12px">卡片生成出错</h2><p style="color:#EF4444">'+e.message+'</p><pre style="color:#94A3B8;font-size:11px;text-align:left;white-space:pre-wrap">'+e.stack+'</pre></div>';
+    $('act3').innerHTML='<div class="back-btn" onclick="goBack()">← 返回搜索</div><div class="card" style="padding:40px 20px;text-align:center"><h2 style="color:#c53030;margin-bottom:12px">卡片生成出错</h2><p style="color:#888">'+e.message+'</p></div>';
   }
 }
 
 // ====== 三幕串联 ======
 async function runThreeActs(rec){
-  console.log('Starting three acts for:',rec.name);
-  try{
-    await act1Sequence(rec);
-    console.log('Act1 complete');
-  }catch(e){
-    console.error('Act1 error:',e);
-  }
-  try{
-    await act2Sequence();
-    console.log('Act2 complete');
-  }catch(e){
-    console.error('Act2 error:',e);
-  }
-  // 无论如何都清理前两幕并显示卡片
+  try{await act1Sequence(rec);}catch(e){}
+  try{await act2Sequence();}catch(e){}
   $('act1').style.display='none';
   $('act2').style.display='none';
   $('act2').style.opacity='0';
   $('act2').style.visibility='hidden';
   $('act2').style.pointerEvents='none';
-  console.log('Rendering act3...');
   renderAct3(rec);
-  console.log('Act3 rendered, showing...');
   $('act3').classList.add('show');
   window.scrollTo(0,0);
-  console.log('Done!');
 }
 
 // ====== 备份人员卡片 ======
@@ -925,17 +903,6 @@ function goBack(){
   hintText.textContent='共 '+DATA.records.length+' 人执勤 · '+backupCount+' 人备份 · 输入姓名搜索';
 })();
 
-// 测试按钮：跳过动画直接显示卡片
-function testCard(){
-  var rec=DATA.records.find(function(r){return r.name==='金京'});
-  if(!rec){alert('未找到金京');return;}
-  $('searchPage').style.display='none';
-  $('act1').style.display='none';
-  $('act2').style.display='none';
-  renderAct3(rec);
-  $('act3').classList.add('show');
-  console.log('Test card rendered');
-}
 </script>
 </body>
 </html>
