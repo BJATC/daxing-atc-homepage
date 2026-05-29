@@ -189,7 +189,8 @@ body.locked {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  padding-bottom: 18vh;
   background: rgba(26, 26, 24, 0.6);
   cursor: pointer;
   transition: opacity 0.5s ease;
@@ -199,32 +200,51 @@ body.locked {
   pointer-events: none;
 }
 .hero__play-btn {
-  width: 72px;
-  height: 72px;
-  border: 2px solid rgba(255,255,255,0.8);
-  border-radius: 50%;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  transition: transform 0.3s ease, border-color 0.3s ease;
-}
-.hero__play-btn:hover {
-  transform: scale(1.08);
-  border-color: #fff;
-}
-.hero__play-icon {
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 12px 0 12px 22px;
-  border-color: transparent transparent transparent rgba(255,255,255,0.9);
-  margin-left: 4px;
+  gap: 1.6rem;
+  cursor: pointer;
 }
 .hero__play-text {
-  margin-top: 1.25rem;
-  color: rgba(255,255,255,0.7);
-  font-size: 0.8125rem;
-  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.95);
+  font-size: 1.4rem;
+  font-weight: 300;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  transition: letter-spacing 0.4s ease;
+}
+.hero__play-btn:hover .hero__play-text {
+  letter-spacing: 0.5em;
+}
+.hero__play-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+.hero__play-arrow-line {
+  width: 2px;
+  height: 56px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.85));
+  animation: arrow-pulse 1.8s ease-in-out infinite;
+}
+.hero__play-arrow-head {
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid rgba(255,255,255,0.85);
+  border-bottom: 2px solid rgba(255,255,255,0.85);
+  transform: rotate(45deg);
+  margin-top: -1px;
+  animation: arrow-bounce 1.8s ease-in-out infinite;
+}
+@keyframes arrow-pulse {
+  0%, 100% { opacity: 0.3; transform: scaleY(0.7); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+@keyframes arrow-bounce {
+  0%, 100% { transform: rotate(45deg) translateY(0); opacity: 0.5; }
+  50% { transform: rotate(45deg) translateY(4px); opacity: 1; }
 }
 
 /* Sound toggle */
@@ -421,9 +441,12 @@ body.locked {
   <!-- Click-to-play overlay for WeChat / iOS -->
   <div class="hero__play-overlay" id="playOverlay">
     <div class="hero__play-btn">
-      <div class="hero__play-icon"></div>
+      <span class="hero__play-text">Click</span>
+      <span class="hero__play-arrow">
+        <span class="hero__play-arrow-line"></span>
+        <span class="hero__play-arrow-head"></span>
+      </span>
     </div>
-    <p class="hero__play-text">点击播放</p>
   </div>
 
   <!-- Sound toggle -->
@@ -480,44 +503,49 @@ body.locked {
   // Lock scroll until user clicks play
   document.body.classList.add('locked');
 
-  // Click overlay to play (iOS WeChat requires muted first, then unmute)
+  // Click overlay to play, then auto-scroll to duty section
   overlay.addEventListener('click', function() {
-    // Must start muted for iOS WeChat to allow playback
     video.muted = true;
 
-    // Listen for playing event to know when video actually starts
     var onPlaying = function() {
       video.removeEventListener('playing', onPlaying);
 
       hideOverlay();
-      // Unlock scroll
       document.body.classList.remove('locked');
 
-      // Show sound toggle after video starts (always show, not just for animated)
+      // Show sound toggle
       setTimeout(function() { soundBtn.classList.add('visible'); }, 500);
 
-      // Try to unmute after video is actually playing
+      // Try to unmute
       try {
         video.muted = false;
         video.volume = 1;
-        // Update sound button state based on actual muted state
         if (!video.muted) {
           soundOn.style.display = 'block';
           soundOff.style.display = 'none';
         }
-      } catch (e) {
-        // Unmuting failed - user can manually tap sound button
-        console.log('Unmute failed, user can tap sound button');
-      }
+      } catch (e) {}
+
+      // Auto-scroll to duty card section
+      setTimeout(function() {
+        var dutySection = document.getElementById('duty');
+        if (dutySection) {
+          dutySection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 600);
     };
 
     video.addEventListener('playing', onPlaying);
 
     video.play().catch(function(err) {
-      console.error('Video play failed:', err);
       video.removeEventListener('playing', onPlaying);
-      // Keep overlay visible but don't block - let user try again
-      alert('视频播放失败，请点击屏幕重试');
+      // Even if video fails, scroll to duty section
+      hideOverlay();
+      document.body.classList.remove('locked');
+      var dutySection = document.getElementById('duty');
+      if (dutySection) {
+        dutySection.scrollIntoView({ behavior: 'smooth' });
+      }
     });
   });
 
